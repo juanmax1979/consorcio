@@ -1,0 +1,3 @@
+-- Usuario administrador inicial: usar el script del backend en su lugar.
+-- Desde la carpeta backend: node scripts/seed-admin.js
+-- Credenciales: admin@consorcio.local / admin123
