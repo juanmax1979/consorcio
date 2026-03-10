@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../config/db');
 const { auth, adminOnly } = require('../middlewares/auth');
 const { body, validationResult } = require('express-validator');
+const emailService = require('../services/emailService');
 
 const router = express.Router();
 router.use(auth);
@@ -84,6 +85,12 @@ router.post(
           'INSERT INTO mensaje_destinatarios (mensaje_id, usuario_id) VALUES (?, ?)',
           [mensajeId, usuario_id]
         );
+      }
+      if (emailService.isConfigured() && destinatarios.length) {
+        const [users] = await db.query('SELECT email FROM usuarios WHERE id IN (?)', [destinatarios]);
+        for (const u of users) {
+          if (u.email) emailService.sendMessageEmail(u.email, titulo, cuerpo).catch(() => {});
+        }
       }
       const [rows] = await db.query(
         'SELECT m.*, u.nombre as enviado_por_nombre FROM mensajes m JOIN usuarios u ON m.enviado_por = u.id WHERE m.id = ?',

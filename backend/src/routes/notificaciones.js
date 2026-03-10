@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../config/db');
 const { auth, adminOnly } = require('../middlewares/auth');
 const { body, validationResult } = require('express-validator');
+const emailService = require('../services/emailService');
 
 const router = express.Router();
 router.use(auth);
@@ -63,6 +64,10 @@ router.post(
         [usuario_id, tipo || 'aviso', titulo, mensaje || null, referencia_tipo || null, referencia_id || null]
       );
       const [rows] = await db.query('SELECT * FROM notificaciones WHERE id = ?', [r.insertId]);
+      if (emailService.isConfigured()) {
+        const [users] = await db.query('SELECT email FROM usuarios WHERE id = ?', [usuario_id]);
+        if (users.length) emailService.sendNotificationEmail(users[0].email, titulo, mensaje).catch(() => {});
+      }
       res.status(201).json(rows[0]);
     } catch (err) {
       console.error(err);
